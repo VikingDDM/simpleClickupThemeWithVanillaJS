@@ -62,7 +62,7 @@ var groupDraggingDistance;
 var lastChildFlag = false;
 var groupDivNum = 1;
 var groupFlag = false;
-var groupMaxMargin = 0;
+var selectElementOriginPosX
 
 for( i = 0; i < divNum; i++ ){
     allDivs[i].classList.add(i);
@@ -89,7 +89,7 @@ parent.addEventListener('mousedown', function(event) {
     var selectLowerRect;
     var selectLowerElementOriginPosX;
     var selectRect = draggingDiv.getBoundingClientRect();
-    var selectElementOriginPosX = selectRect.left - 8;
+    selectElementOriginPosX = selectRect.left - 8;
 
     if(index < 7) {
     dragLowerDiv = document.getElementsByClassName(index + 1)[0];
@@ -101,7 +101,7 @@ parent.addEventListener('mousedown', function(event) {
     // chect if element has children
     if (selectLowerElementOriginPosX > selectElementOriginPosX) {
       groupFlag = true;
-      groupMaxMargin = 40;
+      
       groupIndex = index + 1;
       var childElement = dragLowerDiv.querySelector('.mydivChild');
       groupRect = dragLowerDiv.getBoundingClientRect();
@@ -121,14 +121,7 @@ parent.addEventListener('mousedown', function(event) {
 
         groupRect = groupParentElement.getBoundingClientRect();
         groupElementOriginPosX = groupRect.left - 8;
-        groupElementMarginLeft = groupElementOriginPosX;
-        if(selectElementOriginPosX == 40) {
-          groupElementMarginLeft = groupElementOriginPosX - 40;
-        }
-        
-        if(groupElementOriginPosX > groupMaxMargin) {
-          groupMaxMargin = groupElementOriginPosX;
-        }
+        groupElementMarginLeft = groupElementOriginPosX - selectElementOriginPosX;
       } 
     }
     previewBoxHeight += 40 * (groupDivNum - 1);
@@ -211,54 +204,21 @@ function dragElement(element) {
     
     previewDiv.style.height = previewBoxHeight + "px";
 
-   // set preview box position when dragging:
+  // set preview box position when dragging:
+    // set  preview box when vertical dragging
     if (e.clientY < mouseOriginPosY - 10 ) {
         $("#previewDiv").remove();
 
-        // set preview box when vertical dragging
         prependIndex = parseInt((elementMovingPosY + 10) / 40);
         if(index == 0) {prependIndex = 1}
         if(prependIndex < 0) {prependIndex = 0}
         prependDiv =  document.getElementsByClassName(prependIndex)[0];
         $(prependDiv).before(previewDiv);
 
-        // set preview box when horizontal dragging
         upperDiv = document.getElementsByClassName(prependIndex - 1)[0];
-        if(upperDiv == undefined) {
-          if(e.clientX > mouseOriginPosX + 10) {
-            previewDiv.style.marginLeft = "40px";
-          } else {
-            previewDiv.style.marginLeft = "0px";
-          }
-        } else {
-          if(parseInt(upperDiv.style.marginLeft) == 0 || isNaN(parseInt(upperDiv.style.marginLeft))) {
-            if(elementMovingPosX < 20) {
-              previewDiv.style.marginLeft = "0px";
-            } else {
-              previewDiv.style.marginLeft = "40px";
-            }
-          } else {
-            if(parseInt(prependDiv.style.marginLeft) == 80) {
-              if(elementMovingPosX < 60) {
-                previewDiv.style.marginLeft = "40px"
-              } else {
-                previewDiv.style.marginLeft = "80px"
-              }
-            } else {
-              if(elementMovingPosX < 20) {
-                previewDiv.style.marginLeft = "0px"
-              } else if(elementMovingPosX >= 20 && elementMovingPosX < 60) {
-                previewDiv.style.marginLeft = "40px"
-              } else {
-                previewDiv.style.marginLeft = "80px"
-              }
-            }
-          }
-        }
     } else if (e.clientY > mouseOriginPosY + 10) {
         $("#previewDiv").remove();
 
-        // set  preview box when vertical dragging
         prependIndex = parseInt((elementMovingPosY + 30) / 40);
         if(index < 7) {
             if(elementMovingPosY < 295) {
@@ -277,42 +237,12 @@ function dragElement(element) {
             $(appendDiv).after(previewDiv);
             upperDiv = appendDiv;
         }
-        if(e.clientY <= mouseOriginPosY + previewBoxHeight) {
+        if(e.clientY <= mouseOriginPosY + previewBoxHeight + 20) {
           upperDiv = document.getElementsByClassName(index - 1)[0];
-        }
-
-        // set  preview box when horizontal dragging
-        if(upperDiv == undefined) {
-          if(e.clientX > mouseOriginPosX + 10) {
-            previewDiv.style.marginLeft = "40px";
-          } else {
-            previewDiv.style.marginLeft = "0px";
-          }
-        } else {
-          if(parseInt(upperDiv.style.marginLeft) == 0 || isNaN(parseInt(upperDiv.style.marginLeft))) {
-            if(elementMovingPosX < 20) {
-              previewDiv.style.marginLeft = "0px";
-            } else {
-              previewDiv.style.marginLeft = "40px";
-            }
-          } else {
-            if(parseInt(upperDiv.style.marginLeft) == 80) {
-              previewDiv.style.marginLeft = "40px"
-            } else {
-              if(elementMovingPosX < 20) {
-                previewDiv.style.marginLeft = "0px"
-              } else if(elementMovingPosX >= 20 && elementMovingPosX < 60) {
-                previewDiv.style.marginLeft = "40px"
-              } else {
-                previewDiv.style.marginLeft = "80px"
-              }
-            }
-          }
         }
     } else if (e.clientY <= mouseOriginPosY + 10 && e.clientY >= mouseOriginPosY - 10) {
       $("#previewDiv").remove();
 
-      // set  preview box when vertical dragging
       prependIndex = index + 1;
       appendIndex = index - 1;
 
@@ -324,64 +254,28 @@ function dragElement(element) {
         $(appendDiv).after(previewDiv);
       }
 
-      // set  preview box when horizontal dragging
       upperDiv = document.getElementsByClassName(index - 1)[0];
-      if(upperDiv == undefined) {
-        if(e.clientX > mouseOriginPosX + 10) {
-          previewDiv.style.marginLeft = "40px";
-        } else {
+    }
+
+    // set  preview box when horizontal dragging
+    if(upperDiv == undefined) {
+        previewDiv.style.marginLeft = "0px";
+    } else {
+      if(parseInt(upperDiv.style.marginLeft) == 0 || isNaN(parseInt(upperDiv.style.marginLeft))) {
+        if(elementMovingPosX < 20) {
           previewDiv.style.marginLeft = "0px";
+        } else {
+          previewDiv.style.marginLeft = "40px";
         }
       } else {
-        if(elementOriginPosX == 0) {
-          if(e.clientX > mouseOriginPosX + 10) {
-            if(parseInt(upperDiv.style.marginLeft) == 0 || isNaN(parseInt(upperDiv.style.marginLeft))) {
-              previewDiv.style.marginLeft = "40px"
-            } else {
-              if(elementMovingPosX < 20) {
-                previewDiv.style.marginLeft = "0px"
-              } else if(elementMovingPosX >= 20 && elementMovingPosX < 60) {
-                previewDiv.style.marginLeft = "40px"
-              } else {
-                previewDiv.style.marginLeft = "80px"
-              }
-            }
-          } else {
-            previewDiv.style.marginLeft = "0px";
-          }
+        if( 0 <= elementMovingPosX && elementMovingPosX <= (parseInt(upperDiv.style.marginLeft) + 40)) {
+          previewDiv.style.marginLeft = (40 * (parseInt(((elementMovingPosX + 40) / 40)) - 1)) + "px";
+        } else if(elementMovingPosX < 0) {
+          previewDiv.style.marginLeft = "0px"
         } else {
-          if(elementMovingPosX > elementOriginPosX) {
-            previewDiv.style.marginLeft = elementOriginPosX + "px"
-          } else {
-            if(parseInt(upperDiv.style.marginLeft) == 40) {
-              if(elementMovingPosX < 20) {
-                previewDiv.style.marginLeft = "0px"
-              } else if(elementMovingPosX > 20 && elementMovingPosX < 60) {
-                previewDiv.style.marginLeft = "40px"
-              } else {
-                previewDiv.style.marginLeft = "80px"
-              }
-            } else {
-              if(elementMovingPosX < 20) {
-                previewDiv.style.marginLeft = "0px"
-              } else if(elementMovingPosX > 20 && elementMovingPosX < 60) {
-                previewDiv.style.marginLeft = "40px"
-              } else {
-                previewDiv.style.marginLeft = "80px"
-              }
-            }
-          }
+          previewDiv.style.marginLeft = (parseInt(upperDiv.style.marginLeft) + 40) + "px";
         }
       }
-    }
-    if(groupMaxMargin == 80) {
-      previewDiv.style.marginLeft = "0px";
-    } else if(groupMaxMargin == 40) {
-      if(elementMovingPosX < 20) {
-        previewDiv.style.marginLeft = "0px"
-      } else if(elementMovingPosX >= 20) {
-        previewDiv.style.marginLeft = "40px"
-      } 
     }
   }
 
@@ -392,7 +286,8 @@ function dragElement(element) {
     $("#previewDiv").remove();
     element.style.position = "static";
 
-    // set  element pos when close dragging
+  // set element pos when close dragging
+    // set element horizontal pos when close dragging
     if (e.clientY < mouseOriginPosY - 10 ) {
 
         prependIndex = parseInt((elementMovingPosY + 10) / 40);
@@ -402,37 +297,6 @@ function dragElement(element) {
         $(prependDiv).before(element);
 
         upperDiv = document.getElementsByClassName(prependIndex - 1)[0];
-        if(upperDiv == undefined) {
-          if(e.clientX > mouseOriginPosX + 10) {
-            element.style.marginLeft = "40px";
-          } else {
-            element.style.marginLeft = "0px";
-          }
-        } else {
-          if(parseInt(upperDiv.style.marginLeft) == 0 || isNaN(parseInt(upperDiv.style.marginLeft))) {
-            if(elementMovingPosX < 20) {
-              element.style.marginLeft = "0px";
-            } else {
-              element.style.marginLeft = "40px";
-            }
-          } else {
-            if(parseInt(prependDiv.style.marginLeft) == 80) {
-              if(elementMovingPosX < 60) {
-                element.style.marginLeft = "40px"
-              } else {
-                element.style.marginLeft = "80px"
-              }
-            } else {
-              if(elementMovingPosX < 20) {
-                element.style.marginLeft = "0px"
-              } else if(elementMovingPosX >= 20 && elementMovingPosX < 60) {
-                element.style.marginLeft = "40px"
-              } else {
-                element.style.marginLeft = "80px"
-              }
-            }
-          }
-        }
     } else if (e.clientY > mouseOriginPosY + 10) {
 
         prependIndex = parseInt((elementMovingPosY + 30) / 40);
@@ -453,36 +317,8 @@ function dragElement(element) {
           $(appendDiv).after(element);
           upperDiv = appendDiv;
         }
-        if(e.clientY <= mouseOriginPosY + previewBoxHeight) {
+        if(e.clientY <= mouseOriginPosY + previewBoxHeight + 20) {
           upperDiv = document.getElementsByClassName(index - 1)[0];
-        }
-
-        if(upperDiv == undefined) {
-          if(e.clientX > mouseOriginPosX + 10) {
-            element.style.marginLeft = "40px";
-          } else {
-            element.style.marginLeft = "0px";
-          }
-        } else {
-          if(parseInt(upperDiv.style.marginLeft) == 0 || isNaN(parseInt(upperDiv.style.marginLeft))) {
-            if(elementMovingPosX < 20) {
-              element.style.marginLeft = "0px";
-            } else {
-              element.style.marginLeft = "40px";
-            }
-          } else {
-            if(parseInt(upperDiv.style.marginLeft) == 80) {
-              element.style.marginLeft = "40px"
-            } else {
-              if(elementMovingPosX < 20) {
-                element.style.marginLeft = "0px"
-              } else if(elementMovingPosX >= 20 && elementMovingPosX < 60) {
-                element.style.marginLeft = "40px"
-              } else {
-                element.style.marginLeft = "80px"
-              }
-            }
-          }
         }
     } else if (e.clientY <= mouseOriginPosY + 10 && e.clientY >= mouseOriginPosY - 10) {
       prependIndex = index + 1;
@@ -496,68 +332,33 @@ function dragElement(element) {
         $(appendDiv).after(element);
       }
 
-      // set  preview box when horizontal dragging
       upperDiv = document.getElementsByClassName(index - 1)[0];
-      if(upperDiv == undefined) {
-        if(e.clientX > mouseOriginPosX + 10) {
-          element.style.marginLeft = "40px";
-        } else {
+    }
+
+    // set element vertical pos when close dragging
+    if(upperDiv == undefined) {
+      element.style.marginLeft = "0px";
+    } else {
+      if(parseInt(upperDiv.style.marginLeft) == 0 || isNaN(parseInt(upperDiv.style.marginLeft))) {
+        if(elementMovingPosX < 20) {
           element.style.marginLeft = "0px";
+        } else {
+          element.style.marginLeft = "40px";
         }
       } else {
-        if(elementOriginPosX == 0) {
-          if(e.clientX > mouseOriginPosX + 10) {
-            if(parseInt(upperDiv.style.marginLeft) == 0 || isNaN(parseInt(upperDiv.style.marginLeft))) {
-              element.style.marginLeft = "40px"
-            } else {
-              if(elementMovingPosX < 20) {
-                element.style.marginLeft = "0px"
-              } else if(elementMovingPosX >= 20 && elementMovingPosX < 60) {
-                element.style.marginLeft = "40px"
-              } else {
-                element.style.marginLeft = "80px"
-              }
-            }
-          } else {
-            element.style.marginLeft = "0px";
-          }
+        if( 0 <= elementMovingPosX && elementMovingPosX <= (parseInt(upperDiv.style.marginLeft) + 40)) {
+          element.style.marginLeft = (40 * (parseInt(((elementMovingPosX + 40) / 40)) - 1)) + "px";
+        } else if(elementMovingPosX < 0) {
+          element.style.marginLeft = "0px"
         } else {
-          if(elementMovingPosX > mouseOriginPosX + 10) {
-            element.style.marginLeft = elementOriginPosX + "px"
-          } else {
-            if(parseInt(upperDiv.style.marginLeft) == 40) {
-              if(elementMovingPosX < 20) {
-                element.style.marginLeft = "0px"
-              } else if(elementMovingPosX > 20 && elementMovingPosX < 60) {
-                element.style.marginLeft = "40px"
-              } else {
-                element.style.marginLeft = "80px"
-              }
-            } else {
-              if(elementMovingPosX < 20) {
-                element.style.marginLeft = "0px"
-              } else if(elementMovingPosX > 20 && elementMovingPosX < 60) {
-                element.style.marginLeft = "40px"
-              } else {
-                element.style.marginLeft = "80px"
-              }
-            }
-          }
+          element.style.marginLeft = (parseInt(upperDiv.style.marginLeft) + 40) + "px";
         }
-      }
-    }
-    if(groupMaxMargin == 80) {
-      element.style.marginLeft = "0px";
-    } else if(groupMaxMargin == 40) {
-      if(elementMovingPosX < 20) {
-        element.style.marginLeft = "0px"
-      } else if(elementMovingPosX >= 20) {
-        element.style.marginLeft = "40px";
-      } else if(elementMovingPosX == undefined) {
-        element.style.marginLeft = "40px";
       }
     }
 
+    if(elementMovingPosY == undefined) {
+      element.style.marginLeft = selectElementOriginPosX + "px"
+    }
 // initializing everything
   // initializing position
     var rect = element.getBoundingClientRect();
@@ -597,7 +398,7 @@ function dragElement(element) {
     }
 
     groupDivNum = 1;
-    groupMaxMargin = 0;
+    
     groupFlag = false;
     $("#previewDiv").remove();
 
