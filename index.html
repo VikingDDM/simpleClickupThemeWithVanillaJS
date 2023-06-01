@@ -16,6 +16,9 @@
   height: 1000px;
   position: relative;
 }
+#addButton {
+  margin-bottom: 10px;
+}
 </style>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
 <body>
@@ -23,6 +26,9 @@
 <h1>Draggable DIV Element</h1>
 
 <p>Click and hold the mouse button down while moving the DIV element</p>
+
+<button id="addButton" onclick="addElement()">Add Element</button>
+<button id="deleteButton" onclick="deleteElement()">Delete Element</button>
 
 <div id="parent">
   	<div class="mydiv">
@@ -49,32 +55,62 @@
     <div class="mydiv">
       <div class="mydivChild">8</div>
     </div>
+    <div class="mydiv">
+      <div class="mydivChild">9</div>
+    </div>
 </div>
 
 <script>
 
-var virtualDiv = document.getElementById("virtualDiv");
-var allDivs =  document.getElementsByClassName("mydiv");
-var divNum = allDivs.length;
-var index, groupIndex;
-var previewBoxHeight = 30;
-var groupDraggingDistance;
-var lastChildFlag = false;
-var groupDivNum = 1;
-var groupFlag = false;
-var selectElementOriginPosX
+// defining variables for customizing logic
+// Get the dragging content
+var parent = document.getElementById('parent');
 
+// Get the content position in the UI
+var contentLeft = parent.getBoundingClientRect().left;
+var contentTop = parent.getBoundingClientRect().top;
+
+// Get the elements in the dragging content
+var allDivs =  document.getElementsByClassName("mydiv");
+
+// Get the element with classname mydivchild for setting event value
+var mydivchildElement = document.getElementsByClassName("mydivChild")[0];
+
+var elementHeight = mydivchildElement.offsetHeight;
+var elementBetweenSpaceHeight = parseInt(window.getComputedStyle(mydivchildElement).marginBottom);
+
+// set the height of previewBox element 
+var previewBoxHeight = elementHeight;
+
+// set the event step 
+var stepX = 40, stepY = elementHeight + elementBetweenSpaceHeight;
+
+// Get number of the elements in the dragging content
+var divNum = allDivs.length;
+
+// Index of  element content and parent group
+var index, groupIndex;
+
+// set the variable for checking if an element if the last child of the parent group
+var lastChildFlag = false;
+
+// set the parent group children number, default 1
+var groupDivNum = 1;
+
+// define the event element origin position
+var selectElementOriginPosX;
+
+
+// set the elements className according to Index 
 for( i = 0; i < divNum; i++ ){
     allDivs[i].classList.add(i);
 }
-
-// Get the parent element
-var parent = document.getElementById('parent');
 
 // Attach event listener to the parent
 parent.addEventListener('mousedown', function(event) {
   // Get the clicked element
   var clickedElement = event.target;
+
   // Find the index of the clicked element 
   var children = Array.from(parent.children);
   children = children.filter(function(child) {
@@ -89,24 +125,22 @@ parent.addEventListener('mousedown', function(event) {
     var selectLowerRect;
     var selectLowerElementOriginPosX;
     var selectRect = draggingDiv.getBoundingClientRect();
-    selectElementOriginPosX = selectRect.left - 8;
-
-    if(index < 7) {
+    selectElementOriginPosX = selectRect.left - contentLeft;
+    previewBoxHeight = elementHeight;
+    if(index < (divNum - 1)) {
     dragLowerDiv = document.getElementsByClassName(index + 1)[0];
     selectLowerRect = dragLowerDiv.getBoundingClientRect();
-	  selectLowerElementOriginPosX = selectLowerRect.left - 8; 
+	  selectLowerElementOriginPosX = selectLowerRect.left - contentLeft; 
     }
-    previewBoxHeight = 30;
     
-    // chect if element has children
+    // chect if element can have children and if yes, merge the children elements into the parentElement
     if (selectLowerElementOriginPosX > selectElementOriginPosX) {
-      groupFlag = true;
-      
+
       groupIndex = index + 1;
       var childElement = dragLowerDiv.querySelector('.mydivChild');
       groupRect = dragLowerDiv.getBoundingClientRect();
-      groupElementOriginPosX = groupRect.left - 8; 
-      groupElementMarginLeft = 40;
+      groupElementOriginPosX = groupRect.left - contentLeft; 
+      groupElementMarginLeft = stepX;
 
       while (groupElementOriginPosX > selectElementOriginPosX){
         $(draggingDiv).append(childElement);
@@ -120,11 +154,11 @@ parent.addEventListener('mousedown', function(event) {
         childElement = groupParentElement.querySelector('.mydivChild');
 
         groupRect = groupParentElement.getBoundingClientRect();
-        groupElementOriginPosX = groupRect.left - 8;
+        groupElementOriginPosX = groupRect.left - contentLeft;
         groupElementMarginLeft = groupElementOriginPosX - selectElementOriginPosX;
       } 
     }
-    previewBoxHeight += 40 * (groupDivNum - 1);
+    previewBoxHeight += stepY * (groupDivNum - 1);
     dragElement(draggingDiv);
   }
 });
@@ -133,15 +167,12 @@ parent.addEventListener('mousedown', function(event) {
 function dragElement(element) {
 
   var draggingX, draggingY, movingMousePosX, movingMousePosY;
-  var dragEndPosX, dragEndPosY;
   var elementOriginPosX, elementOriginPosY, elementMovingPosY, elementMovingPosX, 
       upperElementPosX, upperElementPosY, lowerElementPosX, lowerElementPosY; 
   var mouseOriginPosX, mouseOriginPosY; 
-  var stepX = 0, stepY = 40;
-  var prependIndex, appendIndex, upperIndex, lowerIndex;
-  var prependDiv, appendDiv, upperDiv, presentDiv;
+  var prependIndex, appendIndex;
+  var prependDiv, appendDiv, upperDiv;
   var previewDiv;
-  var childElements;
 
   // start the drag funtionality
   dragMouseDown();
@@ -154,8 +185,8 @@ function dragElement(element) {
     element.style.marginLeft = "0px";
     // get the original position of element:
     var rect = element.getBoundingClientRect();
-	  elementOriginPosY = rect.top - 113.875; 
-	  elementOriginPosX = rect.left - 8; 
+	  elementOriginPosY = rect.top - contentTop; 
+	  elementOriginPosX = rect.left - contentLeft; 
 
     // get the mouse cursor position at startup:
    	mouseOriginPosX = e.clientX; 
@@ -170,10 +201,10 @@ function dragElement(element) {
     previewDiv.style.borderColor = "black";
     previewDiv.style.width = "200px";
     previewDiv.style.height = previewBoxHeight + "px";
-    previewDiv.style.marginBottom = "10px";
+    previewDiv.style.marginBottom = elementBetweenSpaceHeight + "px";
     previewDiv.id = "previewDiv";
 
-    if(index < 7) {
+    if(index < (divNum - 1)) {
       prependIndex = index + 1;
       prependDiv =  document.getElementsByClassName(prependIndex)[0];
       $(prependDiv).before(previewDiv);
@@ -206,33 +237,33 @@ function dragElement(element) {
 
   // set preview box position when dragging:
     // set  preview box when vertical dragging
-    if (e.clientY < mouseOriginPosY - 10 ) {
+    if (e.clientY < mouseOriginPosY - elementBetweenSpaceHeight ) {
         $("#previewDiv").remove();
 
-        prependIndex = parseInt((elementMovingPosY + 10) / 40);
+        prependIndex = parseInt((elementMovingPosY + elementBetweenSpaceHeight) / stepY);
         if(index == 0) {prependIndex = 1}
         if(prependIndex < 0) {prependIndex = 0}
         prependDiv =  document.getElementsByClassName(prependIndex)[0];
         $(prependDiv).before(previewDiv);
 
         upperDiv = document.getElementsByClassName(prependIndex - 1)[0];
-    } else if (e.clientY > mouseOriginPosY + 10) {
+    } else if (e.clientY > mouseOriginPosY + elementBetweenSpaceHeight) {
         $("#previewDiv").remove();
 
-        prependIndex = parseInt((elementMovingPosY + 30) / 40);
-        if(index < 7) {
-            if(elementMovingPosY < 295) {
+        prependIndex = parseInt((elementMovingPosY + elementHeight) / stepY);
+        if(index < (divNum - 1)) {
+            if(elementMovingPosY < (stepY * (divNum - 1) + elementHeight / 2)) {
               prependDiv =  document.getElementsByClassName(prependIndex)[0];
               $(prependDiv).before(previewDiv);
               upperDiv = document.getElementsByClassName(prependIndex - 1)[0];
             } else {
-              appendIndex = 7;
+              appendIndex = divNum - 1;
               appendDiv = document.getElementsByClassName(appendIndex)[0];
               $(appendDiv).after(previewDiv);
               upperDiv = appendDiv;
             }
         } else {
-            appendIndex = 6;
+            appendIndex = divNum - 2;
             appendDiv =  document.getElementsByClassName(appendIndex)[0];
             $(appendDiv).after(previewDiv);
             upperDiv = appendDiv;
@@ -240,13 +271,13 @@ function dragElement(element) {
         if(e.clientY <= mouseOriginPosY + previewBoxHeight + 20) {
           upperDiv = document.getElementsByClassName(index - 1)[0];
         }
-    } else if (e.clientY <= mouseOriginPosY + 10 && e.clientY >= mouseOriginPosY - 10) {
+    } else if (e.clientY <= mouseOriginPosY + elementBetweenSpaceHeight && e.clientY >= mouseOriginPosY - elementBetweenSpaceHeight) {
       $("#previewDiv").remove();
 
       prependIndex = index + 1;
       appendIndex = index - 1;
 
-      if(prependIndex < 7) {
+      if(prependIndex < (divNum - 1)) {
         prependDiv =  document.getElementsByClassName(prependIndex)[0];
         $(prependDiv).before(previewDiv);
       } else {
@@ -262,18 +293,18 @@ function dragElement(element) {
         previewDiv.style.marginLeft = "0px";
     } else {
       if(parseInt(upperDiv.style.marginLeft) == 0 || isNaN(parseInt(upperDiv.style.marginLeft))) {
-        if(elementMovingPosX < 20) {
+        if(elementMovingPosX < (stepX / 2)) {
           previewDiv.style.marginLeft = "0px";
         } else {
-          previewDiv.style.marginLeft = "40px";
+          previewDiv.style.marginLeft = stepX + "px";
         }
       } else {
-        if( 0 <= elementMovingPosX && elementMovingPosX <= (parseInt(upperDiv.style.marginLeft) + 40)) {
-          previewDiv.style.marginLeft = (40 * (parseInt(((elementMovingPosX + 40) / 40)) - 1)) + "px";
+        if( 0 <= elementMovingPosX && elementMovingPosX <= (parseInt(upperDiv.style.marginLeft) + stepX)) {
+          previewDiv.style.marginLeft = (stepX * (parseInt(((elementMovingPosX + stepX) / stepX)) - 1)) + "px";
         } else if(elementMovingPosX < 0) {
           previewDiv.style.marginLeft = "0px"
         } else {
-          previewDiv.style.marginLeft = (parseInt(upperDiv.style.marginLeft) + 40) + "px";
+          previewDiv.style.marginLeft = (parseInt(upperDiv.style.marginLeft) + stepX) + "px";
         }
       }
     }
@@ -287,32 +318,32 @@ function dragElement(element) {
     element.style.position = "static";
 
   // set element pos when close dragging
-    // set element horizontal pos when close dragging
-    if (e.clientY < mouseOriginPosY - 10 ) {
+    // set element vertical pos when close dragging
+    if (e.clientY < mouseOriginPosY - elementBetweenSpaceHeight ) {
 
-        prependIndex = parseInt((elementMovingPosY + 10) / 40);
+        prependIndex = parseInt((elementMovingPosY + elementBetweenSpaceHeight) / stepY);
         if(index == 0) {prependIndex = 1}
         if(prependIndex < 0) {prependIndex = 0}
         prependDiv =  document.getElementsByClassName(prependIndex)[0];
         $(prependDiv).before(element);
 
         upperDiv = document.getElementsByClassName(prependIndex - 1)[0];
-    } else if (e.clientY > mouseOriginPosY + 10) {
+    } else if (e.clientY > mouseOriginPosY + elementBetweenSpaceHeight) {
 
-        prependIndex = parseInt((elementMovingPosY + 30) / 40);
-        if(index < 7) {
-          if(elementMovingPosY < 295) {
+        prependIndex = parseInt((elementMovingPosY + elementHeight) / stepY);
+        if(index < (divNum - 1)) {
+          if(elementMovingPosY < (stepY * (divNum - 1) + elementHeight / 2)) {
               prependDiv =  document.getElementsByClassName(prependIndex)[0];
               $(prependDiv).before(element);
               upperDiv = document.getElementsByClassName(prependIndex -1)[0];
           } else {
-              appendIndex = 7;
+              appendIndex = divNum - 1;
               appendDiv = document.getElementsByClassName(appendIndex)[0];
               $(appendDiv).after(element);
               upperDiv = appendDiv;
           }
         } else {
-          appendIndex = 6;
+          appendIndex = divNum - 2;
           appendDiv =  document.getElementsByClassName(appendIndex)[0];
           $(appendDiv).after(element);
           upperDiv = appendDiv;
@@ -320,11 +351,11 @@ function dragElement(element) {
         if(e.clientY <= mouseOriginPosY + previewBoxHeight + 20) {
           upperDiv = document.getElementsByClassName(index - 1)[0];
         }
-    } else if (e.clientY <= mouseOriginPosY + 10 && e.clientY >= mouseOriginPosY - 10) {
+    } else if (e.clientY <= mouseOriginPosY + elementBetweenSpaceHeight && e.clientY >= mouseOriginPosY - elementBetweenSpaceHeight) {
       prependIndex = index + 1;
       appendIndex = index - 1;
 
-      if(prependIndex < 7) {
+      if(prependIndex < (divNum - 1)) {
         prependDiv =  document.getElementsByClassName(prependIndex)[0];
         $(prependDiv).before(element);
       } else {
@@ -335,40 +366,42 @@ function dragElement(element) {
       upperDiv = document.getElementsByClassName(index - 1)[0];
     }
 
-    // set element vertical pos when close dragging
+    // set element horizontal pos when close dragging 
     if(upperDiv == undefined) {
       element.style.marginLeft = "0px";
     } else {
       if(parseInt(upperDiv.style.marginLeft) == 0 || isNaN(parseInt(upperDiv.style.marginLeft))) {
-        if(elementMovingPosX < 20) {
+        if(elementMovingPosX < (stepX / 2)) {
           element.style.marginLeft = "0px";
         } else {
-          element.style.marginLeft = "40px";
+          element.style.marginLeft = stepX + "px";
         }
       } else {
-        if( 0 <= elementMovingPosX && elementMovingPosX <= (parseInt(upperDiv.style.marginLeft) + 40)) {
-          element.style.marginLeft = (40 * (parseInt(((elementMovingPosX + 40) / 40)) - 1)) + "px";
+        if( 0 <= elementMovingPosX && elementMovingPosX <= (parseInt(upperDiv.style.marginLeft) + stepX)) {
+          element.style.marginLeft = (stepX * (parseInt(((elementMovingPosX + stepX) / stepX)) - 1)) + "px";
         } else if(elementMovingPosX < 0) {
           element.style.marginLeft = "0px"
         } else {
-          element.style.marginLeft = (parseInt(upperDiv.style.marginLeft) + 40) + "px";
+          element.style.marginLeft = (parseInt(upperDiv.style.marginLeft) + stepX) + "px";
         }
       }
     }
 
+    // set element horizontal pos when mouse out without dragging
     if(elementMovingPosY == undefined) {
       element.style.marginLeft = selectElementOriginPosX + "px"
     }
-// initializing everything
+
+ // initializing everything
   // initializing position
     var rect = element.getBoundingClientRect();
-	  elementEndPosY = rect.top - 113.875; 
-	  elementEndPosX = rect.left - 8; 
+	  elementEndPosY = rect.top - contentTop; 
+	  elementEndPosX = rect.left - contentLeft; 
     element.style.top = elementEndPosY + "px";
     element.style.left = elementEndPosX + "px";
 
   // seperation individual div
-    childElements = element.querySelectorAll('.mydivChild');
+    var childElements = element.querySelectorAll('.mydivChild');
     // Check if the seperating child elements exists and if yes, seperating the elements
     if (childElements.length >= 2) {
     // Get the second child elements
@@ -394,18 +427,69 @@ function dragElement(element) {
     for( i = 0; i < divNum; i++ ){
       allDivs[i].className = "mydiv";
       allDivs[i].classList.add(i);
-      allDivs[i].style.top = (i * 40) + "px";
+      allDivs[i].style.top = (i * stepY) + "px";
     }
 
     groupDivNum = 1;
     
-    groupFlag = false;
     $("#previewDiv").remove();
 
     document.onmouseup = null;
     document.onmousemove = null;
   }
 }
+
+function addElement() {
+  
+  // Get the last Div
+  var lastDiv = document.getElementsByClassName(divNum - 1)[0];
+
+  // create new element
+  var newDiv = document.createElement("div");
+  newDiv.style.width = "300px";
+  newDiv.className = "mydiv";
+
+  var newElementDiv = document.createElement("div");
+  newElementDiv.style.marginBottom = "10px";
+  newElementDiv.cursor = "move";
+  newElementDiv.backgroundColor = "grey";
+  newElementDiv.style.width = "300px";
+  newElementDiv.style.height = "30px";
+  newElementDiv.style.textAlign = "center";
+  newElementDiv.className = "mydivChild";
+  newElementDiv.textContent = divNum + 1;
+
+  // Place the new element
+  $(lastDiv).after(newDiv);
+  $(newDiv).prepend(newElementDiv);
+
+  // initializing
+  allDivs =  document.getElementsByClassName("mydiv");
+  divNum = allDivs.length;
+  groupDivNum = 1;
+  // set the elements className according to Index 
+  for( i = 0; i < divNum; i++ ){
+      allDivs[i].classList.add(i);
+  }
+}
+
+function deleteElement() {
+  // Get the last Div
+  var lastDiv = document.getElementsByClassName(divNum - 1)[0];
+
+  // Remove the last element
+  $(lastDiv).remove();
+
+  // initializing
+  allDivs =  document.getElementsByClassName("mydiv");
+  divNum = allDivs.length;
+  groupDivNum = 1;
+  // set the elements className according to Index 
+  for( i = 0; i < divNum; i++ ){
+      allDivs[i].classList.add(i);
+  }
+}
+
 </script>
 
 </body>
